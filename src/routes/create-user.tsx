@@ -1,0 +1,191 @@
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { IconArrowRight, IconAt, IconLock, IconUser } from '@tabler/icons-react';
+import { useForm } from '@mantine/form';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import * as yup from 'yup';
+import { register } from '../features/auth/auth.api';
+import { getApiErrorMessage } from '../utils/getApiErrorMessage';
+import { yupValidate } from '../utils/yupValidate';
+import { AuthShell } from '../components/auth/AuthShell';
+
+export const Route = createFileRoute('/create-user')({
+  component: CreateUserPage,
+});
+
+const registerSchema = yup.object({
+  name: yup
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be at most 50 characters')
+    .matches(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces')
+    .required('Name is required'),
+  username: yup
+    .string()
+    .trim()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .matches(/^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$/, 'Invalid username')
+    .required('Username is required'),
+  email: yup.string().trim().email('Enter a valid email').required('Email is required'),
+  password: yup
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be at most 128 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      'Must include uppercase, lowercase, number, and special character (@$!%*?&)',
+    )
+    .required('Password is required'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Passwords do not match')
+    .required('Confirm password is required'),
+});
+
+function CreateUserPage() {
+  const navigate = useNavigate();
+
+  const form = useForm({
+    initialValues: {
+      name: '',
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validate: yupValidate(registerSchema),
+    transformValues: (values) => ({
+      ...values,
+      username: values.username.trim().toLowerCase(),
+      email: values.email.trim().toLowerCase(),
+      name: values.name.trim(),
+    }),
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: register,
+    onSuccess: () => {
+      toast.success('Account created');
+      navigate({ to: '..' });
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+
+  return (
+    <AuthShell
+      title="Create your account"
+      subtitle="Create your DevConnect profile in a minute."
+      footer={
+        <div className="flex items-center justify-between text-sm text-zinc-300">
+          <span>Already have an account?</span>
+          <Link
+            to="/login"
+            className="rounded-lg px-2 py-1 font-medium text-indigo-300 hover:bg-white/5 hover:text-indigo-200"
+          >
+            Login
+          </Link>
+        </div>
+      }
+    >
+      <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-5">
+        <form
+          className="grid gap-4"
+          onSubmit={form.onSubmit((values) => {
+            registerMutation.mutate(values);
+          })}
+        >
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-zinc-200">Name</span>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-950/40 px-3 py-2.5 ring-1 ring-transparent focus-within:ring-indigo-500/40">
+              <IconUser className="size-5 text-zinc-400" />
+              <input
+                type="text"
+                autoComplete="name"
+                placeholder="Bhargav"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                {...form.getInputProps('name')}
+              />
+            </div>
+            {form.errors.name && <p className="text-xs text-rose-300">{form.errors.name}</p>}
+          </label>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-zinc-200">Username</span>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-950/40 px-3 py-2.5 ring-1 ring-transparent focus-within:ring-indigo-500/40">
+              <IconUser className="size-5 text-zinc-400" />
+              <input
+                type="text"
+                autoComplete="username"
+                placeholder="bhargav_01"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                {...form.getInputProps('username')}
+              />
+            </div>
+            {form.errors.username && <p className="text-xs text-rose-300">{form.errors.username}</p>}
+          </label>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-zinc-200">Email</span>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-950/40 px-3 py-2.5 ring-1 ring-transparent focus-within:ring-indigo-500/40">
+              <IconAt className="size-5 text-zinc-400" />
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                {...form.getInputProps('email')}
+              />
+            </div>
+            {form.errors.email && <p className="text-xs text-rose-300">{form.errors.email}</p>}
+          </label>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-zinc-200">Password</span>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-950/40 px-3 py-2.5 ring-1 ring-transparent focus-within:ring-indigo-500/40">
+              <IconLock className="size-5 text-zinc-400" />
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="••••••••"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                {...form.getInputProps('password')}
+              />
+            </div>
+            {form.errors.password && <p className="text-xs text-rose-300">{form.errors.password}</p>}
+          </label>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-zinc-200">Confirm password</span>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-950/40 px-3 py-2.5 ring-1 ring-transparent focus-within:ring-indigo-500/40">
+              <IconLock className="size-5 text-zinc-400" />
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="••••••••"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                {...form.getInputProps('confirmPassword')}
+              />
+            </div>
+            {form.errors.confirmPassword && (
+              <p className="text-xs text-rose-300">{form.errors.confirmPassword}</p>
+            )}
+          </label>
+
+          <button
+            type="submit"
+            disabled={registerMutation.isPending}
+            className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {registerMutation.isPending ? 'Creating…' : 'Create account'}
+            <IconArrowRight className="size-5" />
+          </button>
+        </form>
+      </div>
+    </AuthShell>
+  );
+}
+
