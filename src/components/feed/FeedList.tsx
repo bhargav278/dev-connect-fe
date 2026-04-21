@@ -1,4 +1,3 @@
-import { IconRefresh } from '@tabler/icons-react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { PostCard } from './PostCard';
 import type { FeedResponse } from '../../features/posts/posts.api';
